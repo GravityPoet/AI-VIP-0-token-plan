@@ -1,10 +1,10 @@
-# AI-VIP-0-token-plan—GravityPoet开发
+# Bob-DeepThink-Free-ChatGPT-Gemini-Claude
 
-> Bob 安装显示名：`AI-VIP-0-token-plan—GravityPoet开发`
+> Bob 安装显示名：`Bob-DeepThink-Free-ChatGPT-Gemini-Claude`
 
-[![GitHub release](https://img.shields.io/github/v/release/GravityPoet/AI-VIP-0-token-plan?style=flat-square)](https://github.com/GravityPoet/AI-VIP-0-token-plan/releases)
+[![GitHub release](https://img.shields.io/github/v/release/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude?style=flat-square)](https://github.com/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude/releases)
 [![Platform](https://img.shields.io/badge/platform-Bob%20Plugin-black?style=flat-square)](https://bobtranslate.com/)
-[![Gateway](https://img.shields.io/badge/backend-OpenAI%20Compatible-blue?style=flat-square)](https://github.com/GravityPoet/AI-VIP-0-token-plan)
+[![Gateway](https://img.shields.io/badge/backend-OpenAI%20Compatible-blue?style=flat-square)](https://github.com/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude)
 
 > 一个面向 Bob 的高兼容翻译插件：OpenAI / Gemini / AWS Bedrock / 自定义 OpenAI 兼容网关，支持流式输出、思考强度与思考链折叠。
 
@@ -24,13 +24,13 @@
 
 - `plugin/info.json`：Bob 插件元信息
 - `plugin/main.js`：插件实现源码
-- `AI-VIP-0-token-plan.bobplugin`：可直接双击安装包
+- `Bob-DeepThink-Free-ChatGPT-Gemini-Claude.bobplugin`：可直接双击安装包
 - `appcast.json`：Bob 插件更新源
 - `docs/quickstart.md`：快速配置
 
 ## 安装
 
-1. 到 [Releases](https://github.com/GravityPoet/AI-VIP-0-token-plan/releases) 下载 `AI-VIP-0-token-plan.bobplugin`
+1. 到 [Releases](https://github.com/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude/releases) 下载 `Bob-DeepThink-Free-ChatGPT-Gemini-Claude.bobplugin`
 2. 双击安装到 Bob
 3. 在 Bob 插件配置里填写：
    - `Base URL / Endpoint`：你的 OpenAI 兼容网关地址（会自动标准化到 `/v1`）
@@ -54,7 +54,7 @@
 
 Bob 更新地址：
 
-`https://github.com/GravityPoet/AI-VIP-0-token-plan/raw/main/appcast.json`
+`https://github.com/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude/raw/main/appcast.json`
 
 ## 许可
 

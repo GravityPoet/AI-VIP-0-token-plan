@@ -1,69 +1,13 @@
 {
-  "identifier": "io.github.gravitypoet.ai-vip-0-token-plan",
+  "identifier": "io.github.gravitypoet.bob-deepthink-free-chatgpt-gemini-claude",
   "versions": [
     {
-      "version": "0.1.8",
-      "desc": "增强思考链折叠识别：覆盖 reasoning_content/thinking/Gemini thought parts/OpenAI 兼容 reasoning 增量；并新增插件图标。",
-      "sha256": "bed5eecd29f042856cf2f8871762d604d2df72dcc1d3391b98e478e0f28d36dd",
-      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.8/AI-VIP-0-token-plan.bobplugin",
+      "version": "0.1.9",
+      "desc": "统一品牌命名为 Bob-DeepThink-Free-ChatGPT-Gemini-Claude；保留全通道翻译、流式输出、思考强度与思考链折叠能力。",
+      "sha256": "375b9a2499f1881721ff8235531fcc6e9ed21d039ef85c5a536d8ad27966ee7d",
+      "url": "https://github.com/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude/releases/download/v0.1.9/Bob-DeepThink-Free-ChatGPT-Gemini-Claude.bobplugin",
       "minBobVersion": "1.8.0",
-      "timestamp": 1771188829764
-    },
-    {
-      "version": "0.1.7",
-      "desc": "新增思考链折叠：自动将 <reasoning>/<think> 从译文中拆分到 Bob thinkInfo 折叠区，避免长思考文本污染翻译结果。",
-      "sha256": "d9b3815e22642b0678b1ca1241524f24650352a4f601db8b7072c76fa96f8480",
-      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.7/AI-VIP-0-token-plan.bobplugin",
-      "minBobVersion": "1.8.0",
-      "timestamp": 1771186804937
-    },
-    {
-      "version": "0.1.6",
-      "desc": "思考强度参数扩展到 Gemini/AWS 等 Chat Completions 协议（reasoning_effort）；Responses 协议继续使用 reasoning.effort；默认“无”仍不传参。",
-      "sha256": "6fd1aa858ac5827584cff515c78191fecc11247c4b8379849a4f0777660d86b7",
-      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.6/AI-VIP-0-token-plan.bobplugin",
-      "minBobVersion": "1.8.0",
-      "timestamp": 1771184631962
-    },
-    {
-      "version": "0.1.5",
-      "desc": "思考强度新增“无(不设置)”并设为默认，避免不支持 reasoning 参数的模型报错；仅在 OpenAI 通道且非“无”时发送 reasoning.effort。",
-      "sha256": "c3c9d6608f202a9fe3ba28f10b0fa4b2af4ad239f060f24679a820b56165b8e5",
-      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.5/AI-VIP-0-token-plan.bobplugin",
-      "minBobVersion": "1.8.0",
-      "timestamp": 1771184108903
-    },
-    {
-      "version": "0.1.4",
-      "desc": "修复 Bedrock Runtime(OpenAI) 校验 404：增加端点识别与明确引导（Runtime 建议 Chat Completions，Mantle 可用 Responses/Chat）。",
-      "sha256": "e97e69e88544d206d24ed9c37421652da7e9cb8772e58baeb51df3a58380bf1f",
-      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.4/AI-VIP-0-token-plan.bobplugin",
-      "minBobVersion": "1.8.0",
-      "timestamp": 1771183665130
-    },
-    {
-      "version": "0.1.3",
-      "desc": "新增 AWS Bedrock(Mantle) 驱动入口：支持 Bedrock 区域自动端点、OpenAI 兼容协议调用（Responses/Chat Completions）。",
-      "sha256": "59fdbeb47a3fa7e773caf0ff4e457e7da3401ad514acca0e5f3a9dc1c27b64b8",
-      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.3/AI-VIP-0-token-plan.bobplugin",
-      "minBobVersion": "1.8.0",
-      "timestamp": 1771182955473
-    },
-    {
-      "version": "0.1.2",
-      "desc": "品牌：安装显示名改为 AI-VIP-0-token-plan—GravityPoet开发；能力：新增流式输出、思考强度、自定义厂商通道与协议切换。",
-      "sha256": "2fd95b33808152ada16b5ffc1536c9bc732b097d09f126df7c55b8bed1513e63",
-      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.2/AI-VIP-0-token-plan.bobplugin",
-      "minBobVersion": "1.8.0",
-      "timestamp": 1771182298120
-    },
-    {
-      "version": "0.1.0",
-      "desc": "首个公开版本：支持 Sub2API + OpenAI/Gemini 双通道翻译，单开关模型选择。",
-      "sha256": "a740e378c9b1cae72a946fb06df6687432d52d9059450363d52df046e5ffb587",
-      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.0/AI-VIP-0-token-plan.bobplugin",
-      "minBobVersion": "1.8.0",
-      "timestamp": 1771178185828
+      "timestamp": 1771192238194
     }
   ]
 }
