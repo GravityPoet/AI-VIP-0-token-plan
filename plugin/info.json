@@ -1,9 +1,9 @@
 {
   "identifier": "io.github.gravitypoet.ai-vip-0-token-plan",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "category": "translate",
   "name": "AI-VIP-0-token-plan—GravityPoet开发",
-  "summary": "通过 Sub2API 调用 OpenAI/Gemini 的 Bob 文本翻译插件",
+  "summary": "支持 OpenAI/Gemini/AWS Bedrock 的 Bob 文本翻译插件",
   "icon": "",
   "author": "GravityPoet",
   "homepage": "https://github.com/GravityPoet/AI-VIP-0-token-plan",
@@ -25,6 +25,10 @@
           "value": "gemini"
         },
         {
+          "title": "AWS Bedrock (Mantle)",
+          "value": "bedrock"
+        },
+        {
           "title": "自定义(兼容 OpenAI API)",
           "value": "custom"
         }
@@ -33,8 +37,8 @@
     {
       "identifier": "baseUrl",
       "type": "text",
-      "title": "Sub2API Base URL",
-      "desc": "可填 http://127.0.0.1:18080 或 http://127.0.0.1:18080/v1，插件会自动标准化到 /v1。",
+      "title": "Base URL / Endpoint",
+      "desc": "Sub2API 示例: http://127.0.0.1:18080/v1；Bedrock 示例: https://bedrock-mantle.us-east-1.api.aws/v1。插件会自动标准化到 /v1。",
       "defaultValue": "http://127.0.0.1:18080/v1",
       "textConfig": {
         "placeholderText": "http://127.0.0.1:18080/v1",
@@ -44,11 +48,22 @@
     {
       "identifier": "apiKey",
       "type": "text",
-      "title": "Sub2API Key",
-      "desc": "填 Sub2API 的 sk-...（不是 OpenAI 官方 key）",
+      "title": "API Key",
+      "desc": "Sub2API 或 Amazon Bedrock API Key（Bearer）。",
       "textConfig": {
         "placeholderText": "sk-xxxxxxxx",
         "type": "secure"
+      }
+    },
+    {
+      "identifier": "bedrockRegion",
+      "type": "text",
+      "title": "Bedrock Region",
+      "defaultValue": "us-east-1",
+      "desc": "仅 AWS Bedrock 通道使用。若 Base URL 仍为默认值，将自动生成为 bedrock-mantle.<region>.api.aws/v1。",
+      "textConfig": {
+        "placeholderText": "us-east-1",
+        "type": "visible"
       }
     },
     {

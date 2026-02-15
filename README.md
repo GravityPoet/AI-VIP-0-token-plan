@@ -6,11 +6,11 @@
 [![Platform](https://img.shields.io/badge/platform-Bob%20Plugin-black?style=flat-square)](https://bobtranslate.com/)
 [![Gateway](https://img.shields.io/badge/backend-Sub2API-blue?style=flat-square)](https://github.com/Wei-Shaw/sub2api)
 
-> Bob 文本翻译插件（Translate 类）：通过 Sub2API 统一调用 OpenAI / Gemini。
+> Bob 文本翻译插件（Translate 类）：支持 OpenAI / Gemini / AWS Bedrock（Mantle）。
 
 ## 核心特性
 
-- 通道可自定义：`OpenAI` / `Gemini` / `自定义(兼容 OpenAI API)`
+- 通道可自定义：`OpenAI` / `Gemini` / `AWS Bedrock (Mantle)` / `自定义(兼容 OpenAI API)`
 - 接口协议可切换：`Responses API` / `Chat Completions`
 - 单模型入口：同一处选择模型，调用逻辑更清晰
 - 兼容 Sub2API：自动把 Base URL 标准化到 `/v1`
@@ -37,6 +37,14 @@
    - `翻译通道`：OpenAI / Gemini / 自定义(兼容 OpenAI API)
    - `接口协议`：`Responses API` 或 `Chat Completions`
    - `模型`：可选预设或自定义模型名
+
+### AWS Bedrock（Mantle）快速配置
+
+1. `翻译通道` 选择 `AWS Bedrock (Mantle)`  
+2. `Bedrock Region` 填你的区域（默认 `us-east-1`）  
+3. `API Key` 填 Amazon Bedrock API key（Bearer）  
+4. `Base URL / Endpoint` 可留默认（插件会按 region 自动生成为 `https://bedrock-mantle.<region>.api.aws/v1`），也可手填  
+5. `接口协议` 可选 `Responses API` 或 `Chat Completions`  
 
 ## 版本更新
 

@@ -3,21 +3,24 @@
 ## 1) 前置条件
 
 - Bob 已安装
-- Sub2API 可访问（`/health` 为 200）
-- 你有可用的 Sub2API Key（`sk-...`）
+- 你有可用的 API Key（Sub2API 或 AWS Bedrock）
 
 ## 2) 基本配置
 
-- **Sub2API Base URL**：
-  - 本机直连：`http://127.0.0.1:18080`
-  - SSH 隧道：`http://127.0.0.1:18081`
-- **Sub2API Key**：填 Sub2API 的 key（不是 OpenAI 官方 key）
+- **Base URL / Endpoint**：
+  - Sub2API 本机直连：`http://127.0.0.1:18080`
+  - Sub2API SSH 隧道：`http://127.0.0.1:18081`
+  - AWS Bedrock Mantle：`https://bedrock-mantle.<region>.api.aws/v1`
+- **API Key**：
+  - Sub2API：填 Sub2API 的 key
+  - Bedrock：填 Amazon Bedrock API key（Bearer）
 - **翻译通道**：
   - `OpenAI`：模型建议 `gpt-5.2`
   - `Gemini`：模型建议 `gemini-3-flash-preview`
+  - `AWS Bedrock (Mantle)`：模型填你在 Bedrock 可用的模型 ID（例如 `us.meta.llama4-maverick-17b-instruct-v1:0`）
 
 ## 3) 常见问题
 
 - 报错 `Invalid API key`：key 错误或已失效
-- 报错 `Upstream request failed`：Sub2API 上游账号不可用/容量不足
-- 报错 `通道与模型不匹配`：比如 OpenAI 通道选了 Gemini 模型
+- 报错 `Upstream request failed`：上游服务不可用/容量不足
+- Bedrock 报 403/401：确认 API key 有效、区域是否正确、模型是否已开通

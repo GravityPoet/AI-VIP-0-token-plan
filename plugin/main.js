@@ -122,6 +122,7 @@ var DEFAULT_MAX_OUTPUT_TOKENS = 1024;
 var DEFAULT_REASONING_EFFORT = 'medium';
 var DEFAULT_STREAM_OUTPUT = true;
 var DEFAULT_API_MODE = 'responses';
+var DEFAULT_BEDROCK_REGION = 'us-east-1';
 
 var REASONING_EFFORT_VALUES = {
     low: true,
@@ -810,7 +811,25 @@ function normalizeTranslateQuery(query) {
 }
 
 function buildRuntimeConfig() {
+    var apiKey = getOptionString('apiKey', '');
+    if (!apiKey) {
+        return {
+            ok: false,
+            error: makeServiceError('secretKey', '请先填写 API Key。'),
+        };
+    }
+
+    var provider = getOptionString('provider', 'openai');
+    if (provider !== 'openai' && provider !== 'gemini' && provider !== 'bedrock' && provider !== 'custom') {
+        provider = 'custom';
+    }
+    var apiMode = parseMenuChoice('apiMode', DEFAULT_API_MODE, API_MODE_VALUES);
+    var bedrockRegion = normalizeRegion(getOptionString('bedrockRegion', DEFAULT_BEDROCK_REGION));
+
     var baseUrlRaw = getOptionString('baseUrl', DEFAULT_BASE_URL);
+    if (provider === 'bedrock' && isDefaultSub2ApiUrl(baseUrlRaw)) {
+        baseUrlRaw = buildBedrockMantleBaseUrl(bedrockRegion);
+    }
     var baseUrl = normalizeBaseUrl(baseUrlRaw);
     if (!baseUrl) {
         return {
@@ -820,20 +839,6 @@ function buildRuntimeConfig() {
             }),
         };
     }
-
-    var apiKey = getOptionString('apiKey', '');
-    if (!apiKey) {
-        return {
-            ok: false,
-            error: makeServiceError('secretKey', '请先填写 Sub2API Key。'),
-        };
-    }
-
-    var provider = getOptionString('provider', 'openai');
-    if (provider !== 'openai' && provider !== 'gemini' && provider !== 'custom') {
-        provider = 'custom';
-    }
-    var apiMode = parseMenuChoice('apiMode', DEFAULT_API_MODE, API_MODE_VALUES);
 
     var timeoutSec = parseIntegerInRange(
         getOptionString('requestTimeoutSec', String(DEFAULT_TIMEOUT_SEC)),
@@ -862,6 +867,7 @@ function buildRuntimeConfig() {
         apiKey: apiKey,
         provider: provider,
         apiMode: apiMode,
+        bedrockRegion: bedrockRegion,
         timeoutSec: timeoutSec,
         maxOutputTokens: maxOutputTokens,
         reasoningEffort: reasoningEffort,
@@ -974,6 +980,34 @@ function normalizeBaseUrl(raw) {
     }
 
     return value + '/v1';
+}
+
+function normalizeRegion(raw) {
+    var region = String(raw || '').trim().toLowerCase();
+    if (!region) {
+        return DEFAULT_BEDROCK_REGION;
+    }
+    if (!/^[a-z0-9-]+$/.test(region)) {
+        return DEFAULT_BEDROCK_REGION;
+    }
+    return region;
+}
+
+function buildBedrockMantleBaseUrl(region) {
+    return 'https://bedrock-mantle.' + region + '.api.aws/v1';
+}
+
+function isDefaultSub2ApiUrl(raw) {
+    if (typeof raw !== 'string') {
+        return true;
+    }
+
+    var normalized = normalizeBaseUrl(raw);
+    var defaultNormalized = normalizeBaseUrl(DEFAULT_BASE_URL);
+    if (!normalized || !defaultNormalized) {
+        return true;
+    }
+    return normalized === defaultNormalized;
 }
 
 function parseIntegerInRange(raw, defaultValue, minValue, maxValue) {

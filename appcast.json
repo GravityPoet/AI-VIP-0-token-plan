@@ -2,6 +2,14 @@
   "identifier": "io.github.gravitypoet.ai-vip-0-token-plan",
   "versions": [
     {
+      "version": "0.1.3",
+      "desc": "新增 AWS Bedrock(Mantle) 驱动入口：支持 Bedrock 区域自动端点、OpenAI 兼容协议调用（Responses/Chat Completions）。",
+      "sha256": "59fdbeb47a3fa7e773caf0ff4e457e7da3401ad514acca0e5f3a9dc1c27b64b8",
+      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.3/AI-VIP-0-token-plan.bobplugin",
+      "minBobVersion": "1.8.0",
+      "timestamp": 1771182955473
+    },
+    {
       "version": "0.1.2",
       "desc": "品牌：安装显示名改为 AI-VIP-0-token-plan—GravityPoet开发；能力：新增流式输出、思考强度、自定义厂商通道与协议切换。",
       "sha256": "2fd95b33808152ada16b5ffc1536c9bc732b097d09f126df7c55b8bed1513e63",
