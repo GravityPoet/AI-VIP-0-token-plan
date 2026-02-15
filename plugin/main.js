@@ -136,6 +136,10 @@ var API_MODE_VALUES = {
     chat_completions: true,
 };
 
+var THINK_BLOCK_REGEXP = /<\s*(reasoning|think)\b[^>]*>([\s\S]*?)<\s*\/\s*\1\s*>/gi;
+var THINK_OPEN_REGEXP = /<\s*(reasoning|think)\b[^>]*>/gi;
+var THINK_CLOSE_REGEXP = /<\s*\/\s*(reasoning|think)\s*>/gi;
+
 function supportLanguages() {
     return SUPPORTED_LANGUAGES.slice();
 }
@@ -276,13 +280,7 @@ function translate(query, completion) {
                 return;
             }
 
-            var translatedText = parsed.text;
-            var paragraphs = splitToParagraphs(translatedText);
-            var result = {
-                from: sourceLang,
-                to: targetLang,
-                toParagraphs: paragraphs,
-            };
+            var result = buildTranslateResult(sourceLang, targetLang, parsed.text, parsed.thinkText, false);
             done({ result: result });
         },
     });
@@ -414,7 +412,8 @@ function requestWithStream(params) {
             }
 
             var translatedText = state.text || state.finalSnapshot;
-            if (!translatedText || !translatedText.trim()) {
+            var parsedFinal = splitThoughtAndAnswer(translatedText);
+            if (!parsedFinal.answerText) {
                 params.done({
                     error: makeServiceError('api', '流式响应里没有可用翻译结果。'),
                 });
@@ -422,11 +421,13 @@ function requestWithStream(params) {
             }
 
             params.done({
-                result: {
-                    from: params.sourceLang,
-                    to: params.targetLang,
-                    toParagraphs: splitToParagraphs(translatedText),
-                },
+                result: buildTranslateResult(
+                    params.sourceLang,
+                    params.targetLang,
+                    parsedFinal.answerText,
+                    parsedFinal.thinkText,
+                    false
+                ),
             });
         },
     });
@@ -512,15 +513,12 @@ function emitStreamResult(query, sourceLang, targetLang, text) {
         return;
     }
 
-    if (typeof text !== 'string' || !text.trim()) {
+    var parsed = splitThoughtAndAnswer(text);
+    if (!parsed.answerText && !parsed.thinkText) {
         return;
     }
 
-    query.onStream({
-        from: sourceLang,
-        to: targetLang,
-        toParagraphs: splitToParagraphs(text),
-    });
+    query.onStream(buildTranslateResult(sourceLang, targetLang, parsed.answerText, parsed.thinkText, true));
 }
 
 function extractStreamDeltaText(eventData) {
@@ -696,10 +694,99 @@ function parseTranslateResponse(resp) {
         };
     }
 
+    var parsed = splitThoughtAndAnswer(text);
+    if (!parsed.answerText) {
+        return {
+            ok: false,
+            error: makeServiceError('api', '响应里只有思考过程，没有可用翻译结果。', resp.data),
+        };
+    }
+
     return {
         ok: true,
-        text: text,
+        text: parsed.answerText,
+        thinkText: parsed.thinkText,
     };
+}
+
+function splitThoughtAndAnswer(rawText) {
+    if (typeof rawText !== 'string' || !rawText.trim()) {
+        return {
+            answerText: '',
+            thinkText: '',
+        };
+    }
+
+    THINK_BLOCK_REGEXP.lastIndex = 0;
+    THINK_OPEN_REGEXP.lastIndex = 0;
+    THINK_CLOSE_REGEXP.lastIndex = 0;
+
+    var thinkChunks = [];
+    var answerText = rawText.replace(THINK_BLOCK_REGEXP, function (_full, _tag, content) {
+        var cleanContent = cleanInlineText(content);
+        if (cleanContent) {
+            thinkChunks.push(cleanContent);
+        }
+        return '';
+    });
+
+    var lastOpen = null;
+    var openMatch = THINK_OPEN_REGEXP.exec(answerText);
+    while (openMatch) {
+        lastOpen = {
+            index: openMatch.index,
+            end: THINK_OPEN_REGEXP.lastIndex,
+        };
+        openMatch = THINK_OPEN_REGEXP.exec(answerText);
+    }
+    if (lastOpen) {
+        var tailThink = cleanInlineText(answerText.slice(lastOpen.end));
+        if (tailThink) {
+            thinkChunks.push(tailThink);
+        }
+        answerText = answerText.slice(0, lastOpen.index);
+    }
+
+    THINK_CLOSE_REGEXP.lastIndex = 0;
+    answerText = answerText.replace(THINK_CLOSE_REGEXP, '');
+
+    return {
+        answerText: cleanInlineText(answerText),
+        thinkText: cleanInlineText(thinkChunks.join('\n\n')),
+    };
+}
+
+function buildTranslateResult(sourceLang, targetLang, answerText, thinkText, allowEmptyParagraphs) {
+    var result = {
+        from: sourceLang,
+        to: targetLang,
+        toParagraphs: [],
+    };
+
+    var cleanAnswer = cleanInlineText(answerText);
+    if (cleanAnswer) {
+        result.toParagraphs = splitToParagraphs(cleanAnswer);
+    } else if (!allowEmptyParagraphs) {
+        result.toParagraphs = [''];
+    }
+
+    var cleanThink = cleanInlineText(thinkText);
+    if (cleanThink) {
+        result.thinkInfo = {
+            content: cleanThink,
+        };
+    }
+
+    return result;
+}
+
+function cleanInlineText(text) {
+    if (typeof text !== 'string') {
+        return '';
+    }
+    return text
+        .replace(/\r/g, '')
+        .trim();
 }
 
 function extractTranslatedText(data) {

@@ -16,6 +16,7 @@
 - 兼容 Sub2API：自动把 Base URL 标准化到 `/v1`
 - 支持 Bob 流式输出：接入 `query.onStream` + `$http.streamRequest`
 - 支持思考强度：`none / low / medium / high`（默认 `none` 不传该参数；`Responses` 协议映射 `reasoning.effort`，`Chat Completions` 协议映射 `reasoning_effort`）
+- 思考链折叠：若上游返回 `<reasoning>`/`<think>`，插件会自动拆分到 Bob 的 `thinkInfo` 折叠区，译文区只保留最终结果
 - 错误可读：401/502/上游异常会返回明确提示
 - 兼容性策略：默认不发送 `temperature` 参数，避免部分 OpenAI 上游返回 400
 

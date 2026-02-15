@@ -2,6 +2,14 @@
   "identifier": "io.github.gravitypoet.ai-vip-0-token-plan",
   "versions": [
     {
+      "version": "0.1.7",
+      "desc": "新增思考链折叠：自动将 <reasoning>/<think> 从译文中拆分到 Bob thinkInfo 折叠区，避免长思考文本污染翻译结果。",
+      "sha256": "d9b3815e22642b0678b1ca1241524f24650352a4f601db8b7072c76fa96f8480",
+      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.7/AI-VIP-0-token-plan.bobplugin",
+      "minBobVersion": "1.8.0",
+      "timestamp": 1771186804937
+    },
+    {
       "version": "0.1.6",
       "desc": "思考强度参数扩展到 Gemini/AWS 等 Chat Completions 协议（reasoning_effort）；Responses 协议继续使用 reasoning.effort；默认“无”仍不传参。",
       "sha256": "6fd1aa858ac5827584cff515c78191fecc11247c4b8379849a4f0777660d86b7",

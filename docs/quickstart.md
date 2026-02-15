@@ -24,6 +24,7 @@
   - `无(不设置)`：默认，完全不发送思考参数（兼容性最好）
   - `低/中/高`：`Responses` 协议会发送 `reasoning.effort`（OpenAI/自定义）；`Chat Completions` 协议会发送 `reasoning_effort`（OpenAI/Gemini/AWS/自定义）
   - 若模型不支持推理参数，改回 `无(不设置)`
+  - 若返回内容含 `<reasoning>` 或 `<think>` 标签，插件会自动拆到 Bob 可折叠思考区
 
 ## 3) 常见问题
 
