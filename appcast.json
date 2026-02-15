@@ -2,6 +2,14 @@
   "identifier": "io.github.gravitypoet.ai-vip-0-token-plan",
   "versions": [
     {
+      "version": "0.1.2",
+      "desc": "品牌：安装显示名改为 AI-VIP-0-token-plan—GravityPoet开发；能力：新增流式输出、思考强度、自定义厂商通道与协议切换。",
+      "sha256": "2fd95b33808152ada16b5ffc1536c9bc732b097d09f126df7c55b8bed1513e63",
+      "url": "https://github.com/GravityPoet/AI-VIP-0-token-plan/releases/download/v0.1.2/AI-VIP-0-token-plan.bobplugin",
+      "minBobVersion": "1.8.0",
+      "timestamp": 1771182298120
+    },
+    {
       "version": "0.1.0",
       "desc": "首个公开版本：支持 Sub2API + OpenAI/Gemini 双通道翻译，单开关模型选择。",
       "sha256": "a740e378c9b1cae72a946fb06df6687432d52d9059450363d52df046e5ffb587",

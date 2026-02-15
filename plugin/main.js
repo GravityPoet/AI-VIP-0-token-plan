@@ -119,6 +119,20 @@ var LANGUAGE_NAMES = {
 var DEFAULT_BASE_URL = 'http://127.0.0.1:18080/v1';
 var DEFAULT_TIMEOUT_SEC = 90;
 var DEFAULT_MAX_OUTPUT_TOKENS = 1024;
+var DEFAULT_REASONING_EFFORT = 'medium';
+var DEFAULT_STREAM_OUTPUT = true;
+var DEFAULT_API_MODE = 'responses';
+
+var REASONING_EFFORT_VALUES = {
+    low: true,
+    medium: true,
+    high: true,
+};
+
+var API_MODE_VALUES = {
+    responses: true,
+    chat_completions: true,
+};
 
 function supportLanguages() {
     return SUPPORTED_LANGUAGES.slice();
@@ -151,7 +165,7 @@ function pluginValidate(completion) {
         },
         timeout: clamp(config.timeoutSec, 10, 30),
         handler: function (resp) {
-            var parsed = parseValidateResponse(resp);
+            var parsed = parseValidateResponse(resp, config);
             if (!parsed.ok) {
                 done({ result: false, error: parsed.error });
                 return;
@@ -162,7 +176,7 @@ function pluginValidate(completion) {
 }
 
 function translate(query, completion) {
-    var done = onceCompletion(completion);
+    var done = createCompletionBridge(query, completion);
 
     var queryResult = normalizeTranslateQuery(query);
     if (!queryResult.ok) {
@@ -184,7 +198,7 @@ function translate(query, completion) {
         return;
     }
 
-    var model = resolveModel(config.provider);
+    var model = resolveModel();
     if (!model.ok) {
         done({ error: model.error });
         return;
@@ -212,38 +226,45 @@ function translate(query, completion) {
         ':\n\n' +
         String(normalizedQuery.text);
 
-    var requestBody = {
-        model: model.name,
-        input: [
-            {
-                role: 'system',
-                content: [
-                    {
-                        type: 'input_text',
-                        text: systemPrompt,
-                    },
-                ],
-            },
-            {
-                role: 'user',
-                content: [
-                    {
-                        type: 'input_text',
-                        text: userPrompt,
-                    },
-                ],
-            },
-        ],
-        max_output_tokens: config.maxOutputTokens,
-    };
+    var apiEndpoint = buildApiEndpoint(config.baseUrl, config.apiMode);
+    var requestBody = buildTranslateRequestBody({
+        apiMode: config.apiMode,
+        modelName: model.name,
+        systemPrompt: systemPrompt,
+        userPrompt: userPrompt,
+        maxOutputTokens: config.maxOutputTokens,
+        provider: config.provider,
+        reasoningEffort: config.reasoningEffort,
+    });
+
+    var useStream =
+        !!config.streamOutput &&
+        typeof $http === 'object' &&
+        $http !== null &&
+        typeof $http.streamRequest === 'function';
+
+    if (useStream) {
+        requestBody.stream = true;
+        requestWithStream({
+            done: done,
+            normalizedQuery: normalizedQuery,
+            sourceLang: sourceLang,
+            targetLang: targetLang,
+            config: config,
+            apiEndpoint: apiEndpoint,
+            requestBody: requestBody,
+        });
+        return;
+    }
 
     $http.request({
         method: 'POST',
-        url: config.baseUrl + '/responses',
+        url: apiEndpoint,
         header: {
             'Content-Type': 'application/json',
             Authorization: 'Bearer ' + config.apiKey,
         },
+        cancelSignal: normalizedQuery.cancelSignal,
         timeout: config.timeoutSec,
         body: requestBody,
         handler: function (resp) {
@@ -265,7 +286,292 @@ function translate(query, completion) {
     });
 }
 
-function parseValidateResponse(resp) {
+function buildApiEndpoint(baseUrl, apiMode) {
+    if (apiMode === 'chat_completions') {
+        return baseUrl + '/chat/completions';
+    }
+    return baseUrl + '/responses';
+}
+
+function buildTranslateRequestBody(params) {
+    if (params.apiMode === 'chat_completions') {
+        return {
+            model: params.modelName,
+            messages: [
+                {
+                    role: 'system',
+                    content: params.systemPrompt,
+                },
+                {
+                    role: 'user',
+                    content: params.userPrompt,
+                },
+            ],
+            max_tokens: params.maxOutputTokens,
+        };
+    }
+
+    var body = {
+        model: params.modelName,
+        input: [
+            {
+                role: 'system',
+                content: [
+                    {
+                        type: 'input_text',
+                        text: params.systemPrompt,
+                    },
+                ],
+            },
+            {
+                role: 'user',
+                content: [
+                    {
+                        type: 'input_text',
+                        text: params.userPrompt,
+                    },
+                ],
+            },
+        ],
+        max_output_tokens: params.maxOutputTokens,
+    };
+
+    if (params.provider === 'openai') {
+        body.reasoning = {
+            effort: params.reasoningEffort,
+        };
+    }
+
+    return body;
+}
+
+function requestWithStream(params) {
+    var state = {
+        text: '',
+        sseBuffer: '',
+        finalSnapshot: '',
+        streamApiError: null,
+    };
+
+    $http.streamRequest({
+        method: 'POST',
+        url: params.apiEndpoint,
+        header: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + params.config.apiKey,
+        },
+        cancelSignal: params.normalizedQuery.cancelSignal,
+        timeout: params.config.timeoutSec,
+        body: params.requestBody,
+        streamHandler: function (stream) {
+            handleStreamChunk(stream, state, params.normalizedQuery, params.sourceLang, params.targetLang);
+        },
+        handler: function (resp) {
+            if (state.streamApiError) {
+                params.done({ error: state.streamApiError });
+                return;
+            }
+
+            var statusCode = getStatusCode(resp);
+            if (statusCode !== 200) {
+                params.done({ error: parseApiError(resp && resp.data, statusCode) });
+                return;
+            }
+
+            if (resp && resp.error) {
+                params.done({
+                    error: makeServiceError('network', '流式请求上游服务失败。', {
+                        error: resp.error,
+                        response: resp.response,
+                    }),
+                });
+                return;
+            }
+
+            var translatedText = state.text || state.finalSnapshot;
+            if (!translatedText || !translatedText.trim()) {
+                params.done({
+                    error: makeServiceError('api', '流式响应里没有可用翻译结果。'),
+                });
+                return;
+            }
+
+            params.done({
+                result: {
+                    from: params.sourceLang,
+                    to: params.targetLang,
+                    toParagraphs: splitToParagraphs(translatedText),
+                },
+            });
+        },
+    });
+}
+
+function handleStreamChunk(stream, state, query, sourceLang, targetLang) {
+    if (!stream || typeof stream.text !== 'string') {
+        return;
+    }
+
+    state.sseBuffer += stream.text;
+    var lines = state.sseBuffer.split(/\r?\n/);
+    state.sseBuffer = lines.pop();
+
+    var i;
+    for (i = 0; i < lines.length; i += 1) {
+        var line = String(lines[i] || '').trim();
+        if (!line || line.indexOf('data:') !== 0) {
+            continue;
+        }
+
+        var payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') {
+            continue;
+        }
+
+        var eventData = safeJsonParse(payload);
+        if (!eventData) {
+            continue;
+        }
+
+        if (isPlainObject(eventData.error)) {
+            state.streamApiError = parseApiError(eventData, 500);
+            continue;
+        }
+
+        var delta = extractStreamDeltaText(eventData);
+        var changed = mergeStreamText(state, delta);
+
+        var snapshot = extractStreamSnapshotText(eventData);
+        if (snapshot) {
+            state.finalSnapshot = snapshot;
+            if (mergeStreamText(state, snapshot)) {
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            emitStreamResult(query, sourceLang, targetLang, state.text);
+        }
+    }
+}
+
+function mergeStreamText(state, incomingText) {
+    if (typeof incomingText !== 'string' || incomingText.length === 0) {
+        return false;
+    }
+
+    if (!state.text) {
+        state.text = incomingText;
+        return true;
+    }
+
+    if (incomingText === state.text) {
+        return false;
+    }
+
+    if (incomingText.indexOf(state.text) === 0) {
+        state.text = incomingText;
+        return true;
+    }
+
+    if (state.text.indexOf(incomingText) === 0 || state.text.slice(-incomingText.length) === incomingText) {
+        return false;
+    }
+
+    state.text += incomingText;
+    return true;
+}
+
+function emitStreamResult(query, sourceLang, targetLang, text) {
+    if (!isPlainObject(query) || typeof query.onStream !== 'function') {
+        return;
+    }
+
+    if (typeof text !== 'string' || !text.trim()) {
+        return;
+    }
+
+    query.onStream({
+        from: sourceLang,
+        to: targetLang,
+        toParagraphs: splitToParagraphs(text),
+    });
+}
+
+function extractStreamDeltaText(eventData) {
+    if (!isPlainObject(eventData)) {
+        return '';
+    }
+
+    if (typeof eventData.delta === 'string' && eventData.delta) {
+        return eventData.delta;
+    }
+
+    if (Array.isArray(eventData.choices) && eventData.choices.length > 0) {
+        var choice = eventData.choices[0];
+        if (isPlainObject(choice) && isPlainObject(choice.delta)) {
+            if (typeof choice.delta.content === 'string' && choice.delta.content) {
+                return choice.delta.content;
+            }
+            var deltaContent = normalizeMessageContent(choice.delta.content);
+            if (deltaContent) {
+                return deltaContent;
+            }
+        }
+    }
+
+    if (Array.isArray(eventData.candidates) && eventData.candidates.length > 0) {
+        var candidate = eventData.candidates[0];
+        var candidateText = extractGeminiCandidateText(candidate);
+        if (candidateText) {
+            return candidateText;
+        }
+    }
+
+    return '';
+}
+
+function extractStreamSnapshotText(eventData) {
+    if (!isPlainObject(eventData)) {
+        return '';
+    }
+
+    if (typeof eventData.output_text === 'string' && eventData.output_text.trim()) {
+        return eventData.output_text.trim();
+    }
+
+    if (isPlainObject(eventData.response) && typeof eventData.response.output_text === 'string') {
+        return eventData.response.output_text.trim();
+    }
+
+    if (Array.isArray(eventData.output)) {
+        return extractFromOutputArray(eventData.output);
+    }
+
+    return '';
+}
+
+function extractGeminiCandidateText(candidate) {
+    if (
+        !isPlainObject(candidate) ||
+        !isPlainObject(candidate.content) ||
+        !Array.isArray(candidate.content.parts)
+    ) {
+        return '';
+    }
+
+    var chunks = [];
+    var i;
+    for (i = 0; i < candidate.content.parts.length; i += 1) {
+        var part = candidate.content.parts[i];
+        if (isPlainObject(part) && typeof part.text === 'string' && part.text) {
+            chunks.push(part.text);
+        }
+    }
+    return chunks.join('');
+}
+
+function parseValidateResponse(resp, config) {
     if (!isPlainObject(resp)) {
         return {
             ok: false,
@@ -276,7 +582,7 @@ function parseValidateResponse(resp) {
     if (resp.error) {
         return {
             ok: false,
-            error: makeServiceError('network', '无法连接到 Sub2API。', {
+            error: makeServiceError('network', '无法连接到上游服务。', {
                 error: resp.error,
                 response: resp.response,
             }),
@@ -284,15 +590,29 @@ function parseValidateResponse(resp) {
     }
 
     var statusCode = getStatusCode(resp);
-    if (statusCode !== 200) {
-        var errorType = statusCode === 401 ? 'secretKey' : 'api';
+    if (statusCode >= 200 && statusCode < 300) {
+        return { ok: true };
+    }
+
+    if (statusCode === 401) {
         return {
             ok: false,
-            error: makeServiceError(errorType, '插件校验失败：HTTP ' + statusCode, resp.data),
+            error: makeServiceError('secretKey', '插件校验失败：HTTP 401，请检查 Key。', resp.data),
         };
     }
 
-    return { ok: true };
+    if (
+        config &&
+        config.provider === 'custom' &&
+        (statusCode === 404 || statusCode === 405 || statusCode === 501)
+    ) {
+        return { ok: true };
+    }
+
+    return {
+        ok: false,
+        error: makeServiceError('api', '插件校验失败：HTTP ' + statusCode, resp.data),
+    };
 }
 
 function parseTranslateResponse(resp) {
@@ -306,7 +626,7 @@ function parseTranslateResponse(resp) {
     if (resp.error) {
         return {
             ok: false,
-            error: makeServiceError('network', '请求 Sub2API 失败。', {
+            error: makeServiceError('network', '请求上游服务失败。', {
                 error: resp.error,
                 response: resp.response,
             }),
@@ -353,8 +673,11 @@ function extractTranslatedText(data) {
 
     if (Array.isArray(data.choices) && data.choices.length > 0) {
         var choice = data.choices[0];
-        if (choice && isPlainObject(choice.message) && typeof choice.message.content === 'string') {
-            return choice.message.content.trim();
+        if (choice && isPlainObject(choice.message)) {
+            var choiceText = normalizeMessageContent(choice.message.content);
+            if (choiceText) {
+                return choiceText;
+            }
         }
     }
 
@@ -399,6 +722,31 @@ function extractFromOutputArray(output) {
 
     var merged = chunks.join('').trim();
     return merged;
+}
+
+function normalizeMessageContent(content) {
+    if (typeof content === 'string') {
+        return content.trim();
+    }
+
+    if (!Array.isArray(content)) {
+        return '';
+    }
+
+    var chunks = [];
+    var i;
+    for (i = 0; i < content.length; i += 1) {
+        var item = content[i];
+        if (typeof item === 'string' && item) {
+            chunks.push(item);
+            continue;
+        }
+        if (isPlainObject(item) && typeof item.text === 'string' && item.text) {
+            chunks.push(item.text);
+        }
+    }
+
+    return chunks.join('').trim();
 }
 
 function parseApiError(data, statusCode) {
@@ -482,9 +830,10 @@ function buildRuntimeConfig() {
     }
 
     var provider = getOptionString('provider', 'openai');
-    if (provider !== 'openai' && provider !== 'gemini') {
-        provider = 'openai';
+    if (provider !== 'openai' && provider !== 'gemini' && provider !== 'custom') {
+        provider = 'custom';
     }
+    var apiMode = parseMenuChoice('apiMode', DEFAULT_API_MODE, API_MODE_VALUES);
 
     var timeoutSec = parseIntegerInRange(
         getOptionString('requestTimeoutSec', String(DEFAULT_TIMEOUT_SEC)),
@@ -500,18 +849,28 @@ function buildRuntimeConfig() {
         8192
     );
 
+    var reasoningEffort = parseMenuChoice(
+        'reasoningEffort',
+        DEFAULT_REASONING_EFFORT,
+        REASONING_EFFORT_VALUES
+    );
+    var streamOutput = parseMenuBoolean('streamOutput', DEFAULT_STREAM_OUTPUT);
+
     return {
         ok: true,
         baseUrl: baseUrl,
         apiKey: apiKey,
         provider: provider,
+        apiMode: apiMode,
         timeoutSec: timeoutSec,
         maxOutputTokens: maxOutputTokens,
+        reasoningEffort: reasoningEffort,
+        streamOutput: streamOutput,
     };
 }
 
-function resolveModel(provider) {
-    var selectedModel = getOptionString('model', provider === 'gemini' ? 'gemini-3-flash-preview' : 'gpt-5.2');
+function resolveModel() {
+    var selectedModel = getOptionString('model', 'gpt-5.2');
 
     if (selectedModel === 'custom') {
         var customModel = getOptionString('customModel', '');
@@ -521,28 +880,9 @@ function resolveModel(provider) {
                 error: makeServiceError('param', '已选择自定义模型，但“自定义模型名”为空。'),
             };
         }
-        if (!isModelCompatibleWithProvider(customModel, provider)) {
-            return {
-                ok: false,
-                error: makeServiceError(
-                    'param',
-                    '通道与模型不匹配：当前通道=' + provider + '，模型=' + customModel
-                ),
-            };
-        }
         return {
             ok: true,
             name: customModel,
-        };
-    }
-
-    if (!isModelCompatibleWithProvider(selectedModel, provider)) {
-        return {
-            ok: false,
-            error: makeServiceError(
-                'param',
-                '通道与模型不匹配：当前通道=' + provider + '，模型=' + selectedModel
-            ),
         };
     }
 
@@ -550,26 +890,6 @@ function resolveModel(provider) {
         ok: true,
         name: selectedModel,
     };
-}
-
-function isModelCompatibleWithProvider(modelName, provider) {
-    var model = String(modelName || '').toLowerCase();
-    if (!model) {
-        return false;
-    }
-
-    if (provider === 'openai') {
-        if (model.indexOf('gemini') === 0 || model.indexOf('claude') === 0) {
-            return false;
-        }
-        return true;
-    }
-
-    if (provider === 'gemini') {
-        return model.indexOf('gemini') === 0;
-    }
-
-    return true;
 }
 
 function languageName(code) {
@@ -672,6 +992,26 @@ function parseFloatInRange(raw, defaultValue, minValue, maxValue) {
     return clamp(parsed, minValue, maxValue);
 }
 
+function parseMenuChoice(key, defaultValue, allowedValues) {
+    var value = getOptionString(key, defaultValue);
+    if (allowedValues && allowedValues[value]) {
+        return value;
+    }
+    return defaultValue;
+}
+
+function parseMenuBoolean(key, defaultValue) {
+    var fallback = defaultValue ? 'true' : 'false';
+    var value = getOptionString(key, fallback).toLowerCase();
+    if (value === 'true') {
+        return true;
+    }
+    if (value === 'false') {
+        return false;
+    }
+    return !!defaultValue;
+}
+
 function clamp(value, minValue, maxValue) {
     return Math.max(minValue, Math.min(maxValue, value));
 }
@@ -729,17 +1069,42 @@ function toReadableAddition(value) {
     }
 }
 
+function safeJsonParse(text) {
+    if (typeof text !== 'string' || !text.trim()) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(text);
+    } catch (err) {
+        return null;
+    }
+}
+
 function isPlainObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function createCompletionBridge(query, completion) {
+    var legacyDone = onceCompletion(completion);
+    var modernCompletion =
+        isPlainObject(query) && typeof query.onCompletion === 'function' ? query.onCompletion : null;
+    var modernDone = onceCompletion(modernCompletion);
+
+    return function (payload) {
+        modernDone(payload);
+        legacyDone(payload);
+    };
+}
+
 function onceCompletion(completion) {
     var done = false;
+    var callback = typeof completion === 'function' ? completion : function () {};
     return function (payload) {
         if (done) {
             return;
         }
         done = true;
-        completion(payload);
+        callback(payload);
     };
 }

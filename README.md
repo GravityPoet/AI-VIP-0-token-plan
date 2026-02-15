@@ -1,4 +1,6 @@
-# AI-VIP-0-token-plan
+# AI-VIP-0-token-plan—GravityPoet开发
+
+> Bob 安装显示名：`AI-VIP-0-token-plan—GravityPoet开发`
 
 [![GitHub release](https://img.shields.io/github/v/release/GravityPoet/AI-VIP-0-token-plan?style=flat-square)](https://github.com/GravityPoet/AI-VIP-0-token-plan/releases)
 [![Platform](https://img.shields.io/badge/platform-Bob%20Plugin-black?style=flat-square)](https://bobtranslate.com/)
@@ -8,9 +10,12 @@
 
 ## 核心特性
 
-- 单开关通道：`OpenAI` / `Gemini`（避免双模型混填歧义）
+- 通道可自定义：`OpenAI` / `Gemini` / `自定义(兼容 OpenAI API)`
+- 接口协议可切换：`Responses API` / `Chat Completions`
 - 单模型入口：同一处选择模型，调用逻辑更清晰
 - 兼容 Sub2API：自动把 Base URL 标准化到 `/v1`
+- 支持 Bob 流式输出：接入 `query.onStream` + `$http.streamRequest`
+- 支持思考强度：`low / medium / high`（OpenAI 通道映射 `reasoning.effort`）
 - 错误可读：401/502/上游异常会返回明确提示
 - 兼容性策略：默认不发送 `temperature` 参数，避免部分 OpenAI 上游返回 400
 
@@ -29,8 +34,9 @@
 3. 在 Bob 插件配置里填写：
    - `Sub2API Base URL`：例如 `http://127.0.0.1:18080` 或 `http://127.0.0.1:18081`
    - `Sub2API Key`：Sub2API 后台创建的 `sk-...`
-   - `翻译通道`：OpenAI 或 Gemini
-   - `模型`：与通道匹配的模型（不匹配会直接报错）
+   - `翻译通道`：OpenAI / Gemini / 自定义(兼容 OpenAI API)
+   - `接口协议`：`Responses API` 或 `Chat Completions`
+   - `模型`：可选预设或自定义模型名
 
 ## 版本更新
 

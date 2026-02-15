@@ -1,8 +1,8 @@
 {
   "identifier": "io.github.gravitypoet.ai-vip-0-token-plan",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "category": "translate",
-  "name": "AI-VIP-0-token-plan",
+  "name": "AI-VIP-0-token-plan—GravityPoet开发",
   "summary": "通过 Sub2API 调用 OpenAI/Gemini 的 Bob 文本翻译插件",
   "icon": "",
   "author": "GravityPoet",
@@ -23,6 +23,10 @@
         {
           "title": "Gemini",
           "value": "gemini"
+        },
+        {
+          "title": "自定义(兼容 OpenAI API)",
+          "value": "custom"
         }
       ]
     },
@@ -82,7 +86,24 @@
           "value": "custom"
         }
       ],
-      "desc": "先用“翻译通道”决定调用 OpenAI/Gemini，再在这里选对应模型。"
+      "desc": "可直接选预设模型，或选择“自定义模型”后手填任何模型名。"
+    },
+    {
+      "identifier": "apiMode",
+      "type": "menu",
+      "title": "接口协议",
+      "defaultValue": "responses",
+      "menuValues": [
+        {
+          "title": "Responses API (/responses)",
+          "value": "responses"
+        },
+        {
+          "title": "Chat Completions (/chat/completions)",
+          "value": "chat_completions"
+        }
+      ],
+      "desc": "自定义厂商时可切换协议；多数 OpenAI 兼容网关可用。"
     },
     {
       "identifier": "customModel",
@@ -115,6 +136,44 @@
         "placeholderText": "1024",
         "type": "visible"
       }
+    },
+    {
+      "identifier": "reasoningEffort",
+      "type": "menu",
+      "title": "思考强度",
+      "defaultValue": "medium",
+      "menuValues": [
+        {
+          "title": "低",
+          "value": "low"
+        },
+        {
+          "title": "中",
+          "value": "medium"
+        },
+        {
+          "title": "高",
+          "value": "high"
+        }
+      ],
+      "desc": "仅 OpenAI 通道生效（映射到 reasoning.effort）。Gemini 通道会忽略该参数。"
+    },
+    {
+      "identifier": "streamOutput",
+      "type": "menu",
+      "title": "流式输出",
+      "defaultValue": "true",
+      "menuValues": [
+        {
+          "title": "开启",
+          "value": "true"
+        },
+        {
+          "title": "关闭",
+          "value": "false"
+        }
+      ],
+      "desc": "开启后优先使用流式请求并实时回调到 Bob。"
     }
   ]
 }
