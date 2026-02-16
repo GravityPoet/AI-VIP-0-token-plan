@@ -1,6 +1,6 @@
 {
   "identifier": "io.github.gravitypoet.bob-deepthink-free-chatgpt-gemini-claude",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "category": "translate",
   "name": "Bob-DeepThink-Free-ChatGPT-Gemini-Claude",
   "summary": "OpenAI/Gemini/AWS/自定义网关翻译插件，支持流式、思考强度与思考链折叠",
@@ -199,7 +199,7 @@
           "value": "false"
         }
       ],
-      "desc": "开启后优先使用流式请求并实时回调到 Bob。"
+      "desc": "开启后优先流式输出；若上游流式未返回可用正文，插件会自动回退一次非流式请求。"
     }
   ]
 }

@@ -15,6 +15,7 @@
 - 单模型入口：同一处选择模型，支持预设与自定义模型名
 - Base URL 智能处理：普通网关自动补齐到 `/v1`；若已填完整端点（如 `/chat/completions` 或 `/responses`）则直连不再二次拼接
 - 支持 Bob 流式输出：接入 `query.onStream` + `$http.streamRequest`
+- 流式兜底回退：若上游流式没有正文，插件会自动回退一次非流式请求，降低 `流式响应里没有可用翻译结果` 的概率
 - 支持思考强度：`none / low / medium / high`（默认 `none` 不传该参数；`Responses` 协议映射 `reasoning.effort`，`Chat Completions` 协议映射 `reasoning_effort`）
 - 思考链折叠：自动识别并折叠常见思考字段（`<reasoning>/<think>`、`reasoning_content`、`thinking`、Gemini thought parts、OpenAI 兼容 `reasoning_*` 增量等）
 - 错误可读：401/502/上游异常会返回明确提示

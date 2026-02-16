@@ -2,12 +2,12 @@
   "identifier": "io.github.gravitypoet.ai-vip-0-token-plan",
   "versions": [
     {
-      "version": "0.1.10",
-      "desc": "兼容过渡更新：沿用旧 identifier 自动覆盖老插件，并修复完整端点直连的 404 拼接问题。",
-      "sha256": "ff8fc1a8a4204f745fe8040de74bb53d329d215ab6d84220c2c973e7b17cd9e6",
-      "url": "https://github.com/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude/releases/download/v0.1.10/Bob-DeepThink-Free-ChatGPT-Gemini-Claude-legacy-id.bobplugin",
+      "version": "0.1.11",
+      "desc": "兼容过渡更新：沿用旧 identifier 自动覆盖老插件，并修复流式空正文自动回退非流式。",
+      "sha256": "0035101baace85b9f5a915c1584c0948a70d049672ef419030a2f86a001d4ef7",
+      "url": "https://github.com/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude/releases/download/v0.1.11/Bob-DeepThink-Free-ChatGPT-Gemini-Claude-legacy-id.bobplugin",
       "minBobVersion": "1.8.0",
-      "timestamp": 1771255886634
+      "timestamp": 1771259936878
     }
   ]
 }

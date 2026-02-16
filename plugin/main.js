@@ -263,25 +263,43 @@ function translate(query, completion) {
         return;
     }
 
+    requestWithoutStream({
+        done: done,
+        normalizedQuery: normalizedQuery,
+        sourceLang: sourceLang,
+        targetLang: targetLang,
+        config: config,
+        apiEndpoint: apiEndpoint,
+        requestBody: requestBody,
+    });
+}
+
+function requestWithoutStream(params) {
     $http.request({
         method: 'POST',
-        url: apiEndpoint,
+        url: params.apiEndpoint,
         header: {
             'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + config.apiKey,
+            Authorization: 'Bearer ' + params.config.apiKey,
         },
-        cancelSignal: normalizedQuery.cancelSignal,
-        timeout: config.timeoutSec,
-        body: requestBody,
+        cancelSignal: params.normalizedQuery.cancelSignal,
+        timeout: params.config.timeoutSec,
+        body: params.requestBody,
         handler: function (resp) {
             var parsed = parseTranslateResponse(resp);
             if (!parsed.ok) {
-                done({ error: parsed.error });
+                params.done({ error: parsed.error });
                 return;
             }
 
-            var result = buildTranslateResult(sourceLang, targetLang, parsed.text, parsed.thinkText, false);
-            done({ result: result });
+            var result = buildTranslateResult(
+                params.sourceLang,
+                params.targetLang,
+                parsed.text,
+                parsed.thinkText,
+                false
+            );
+            params.done({ result: result });
         },
     });
 }
@@ -418,16 +436,35 @@ function requestWithStream(params) {
             }
 
             var translatedText = state.text || state.finalSnapshot;
+            var streamResponseThink = '';
+            if (isPlainObject(resp) && isPlainObject(resp.data)) {
+                if (!translatedText) {
+                    translatedText = extractTranslatedText(resp.data);
+                }
+                streamResponseThink = extractStructuredThinkText(resp.data);
+            }
+
             var parsedFinal = splitThoughtAndAnswer(translatedText);
             if (!parsedFinal.answerText) {
-                params.done({
-                    error: makeServiceError('api', '流式响应里没有可用翻译结果。'),
+                var fallbackBody = cloneRequestBody(params.requestBody);
+                if (isPlainObject(fallbackBody) && Object.prototype.hasOwnProperty.call(fallbackBody, 'stream')) {
+                    delete fallbackBody.stream;
+                }
+
+                requestWithoutStream({
+                    done: params.done,
+                    normalizedQuery: params.normalizedQuery,
+                    sourceLang: params.sourceLang,
+                    targetLang: params.targetLang,
+                    config: params.config,
+                    apiEndpoint: params.apiEndpoint,
+                    requestBody: fallbackBody,
                 });
                 return;
             }
 
             var finalThinkText = mergeThinkText(
-                mergeThinkText(state.thinkText, state.finalThinkSnapshot),
+                mergeThinkText(mergeThinkText(state.thinkText, state.finalThinkSnapshot), streamResponseThink),
                 parsedFinal.thinkText
             );
 
@@ -442,6 +479,25 @@ function requestWithStream(params) {
             });
         },
     });
+}
+
+function cloneRequestBody(rawBody) {
+    var stringBody = '';
+    try {
+        stringBody = JSON.stringify(rawBody);
+    } catch (_error) {
+        return rawBody;
+    }
+
+    if (typeof stringBody !== 'string') {
+        return rawBody;
+    }
+
+    var parsed = safeJsonParse(stringBody);
+    if (!parsed) {
+        return rawBody;
+    }
+    return parsed;
 }
 
 function handleStreamChunk(stream, state, query, sourceLang, targetLang) {
