@@ -2,6 +2,14 @@
   "identifier": "io.github.gravitypoet.bob-deepthink-free-chatgpt-gemini-claude",
   "versions": [
     {
+      "version": "0.1.15",
+      "desc": "修复 Gemini Native 自动路径：从默认 /v1 切换协议时自动转为 /v1beta，避免 404。",
+      "sha256": "d798f4cd877d44f918e4499ac35fd533506dc4e83004fa556d72838b51c4f11a",
+      "url": "https://github.com/GravityPoet/Bob-DeepThink-Free-ChatGPT-Gemini-Claude/releases/download/v0.1.15/Bob-DeepThink-Free-ChatGPT-Gemini-Claude.bobplugin",
+      "minBobVersion": "1.8.0",
+      "timestamp": 1771475053783
+    },
+    {
       "version": "0.1.14",
       "desc": "新增 Gemini Native 协议（/v1beta ...:generateContent）：支持根地址自动补 /v1beta 与完整端点直连。",
       "sha256": "265007caa02be80dfb2e07596969334eacb24562bedac6c3067af57454a75600",

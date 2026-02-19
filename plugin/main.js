@@ -1616,8 +1616,11 @@ function normalizeBaseUrl(raw, apiMode) {
     }
 
     if (apiMode === 'gemini_generate_content') {
-        if (/\/v1beta$/.test(value) || /\/v1$/.test(value)) {
+        if (/\/v1beta$/.test(value)) {
             return value;
+        }
+        if (/\/v1$/.test(value)) {
+            return value.replace(/\/v1$/, '/v1beta');
         }
         return value + '/v1beta';
     }
